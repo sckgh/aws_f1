@@ -3,7 +3,8 @@ def reward_function(params):
     Example of rewarding the agent to stay inside two borders
     and penalizing getting too close to the objects in front
     '''
-
+    import math
+    
     all_wheels_on_track = params['all_wheels_on_track']
     distance_from_center = params['distance_from_center']
     track_width = params['track_width']
@@ -12,18 +13,22 @@ def reward_function(params):
     objects_left_of_center = params['objects_left_of_center']
     is_left_of_center = params['is_left_of_center']
     speed = params['speed']
-    heading = paarms['heading']
+    heading = params['heading']
+    waypoints = params['waypoints']
+    closest_waypoints = params['closest_waypoints']
+    # Calculate the direction of the center line based on the closest waypoints
+    next_point = waypoints[closest_waypoints[1]]
+    prev_point = waypoints[closest_waypoints[0]]
 
-    #Maximising direction heading will allow maximum cornering speeds
-    current_waypoint,next_waypoint = params[closest_waypoints]
-    desired_heading = math.arctan((next_waypoint[0]-current_waypoint[0])/(next_waypoint[1]-current_waypoint[1]))
-    
-    if heading <= 1.05*desired_heading:
-      elif heading >= 0.95*desired_heading
-        reward_cornering = 10.0
-    else:
-      reward_cornering = 1e-3
-    }
+    # Calculate the direction in radius, arctan2(dy, dx), the result is (-pi, pi) in radians
+    track_direction = math.atan2(next_point[1] - prev_point[1], next_point[0] - prev_point[0]) 
+    # Convert to degree
+    track_direction = math.degrees(track_direction)
+
+    # Calculate the difference between the track direction and the heading direction of the car
+    direction_diff = abs(track_direction - heading)
+    if direction_diff > 180:
+        direction_diff = 360 - direction_diff
     # Initialize reward with a small number but not zero
     # because zero means off-track or crashed
     reward = 1e-3
@@ -36,9 +41,6 @@ def reward_function(params):
 
     # Penalize if the agent is too close to the next object
     reward_avoid = 1.0
-    
-    #Penalize if vehicle makes too many moves: smoother racing = objects_left_of_center
-    reward_steps = -0.03*steps
     
     # Distance to the next object
     distance_closest_object = objects_distance[next_object_index]
@@ -55,6 +57,9 @@ def reward_function(params):
 
     # Calculate reward by putting different weights on 
     # the three aspects above and speed
-    reward += 1.0 * reward_lane + 4.0 * reward_avoid + 0.8*speed + reward_steps + reward_cornering
-
-    return reward
+    reward += 1.0 * reward_lane + 4.0 * reward_avoid + 0.8*speed + reward_cornering
+    
+    if direction_diff > 5.0:
+        reward *= 0.8
+        
+    return (reward + 4.0*reward_avoid)
