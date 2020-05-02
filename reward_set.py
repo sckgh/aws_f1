@@ -16,6 +16,7 @@ def reward_function(params):
     heading = params['heading']
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
+    steering = abs(params['steering'])
     # Calculate the direction of the center line based on the closest waypoints
     next_point = waypoints[closest_waypoints[1]]
     prev_point = waypoints[closest_waypoints[0]]
@@ -60,6 +61,9 @@ def reward_function(params):
     reward += 1.0 * reward_lane + 4.0 * reward_avoid + 0.8*speed + reward_cornering
     
     if direction_diff > 5.0:
+        reward *= 0.8
+    
+    if steering > 15:
         reward *= 0.8
         
     return (reward + 4.0*reward_avoid)
